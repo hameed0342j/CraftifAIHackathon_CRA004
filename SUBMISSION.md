@@ -2,6 +2,8 @@
 
 **LeakLatch**: a zone-locked evidence-to-action chain that shuts off water leaks in PGs and hostels, and proves it did.
 
+**Participant:** MUHAMMED AL HAMEED M · participant ID **CRA004** · repository https://github.com/hameed0342j/LeakLatch
+
 ## Requirement → evidence
 
 ### Track A: PipeGen (edge vision)
@@ -51,6 +53,22 @@ python -m simlab.run --all --backend onnxruntime                # 6 scenarios wi
 * **Not yet validated:** the firmware on a physical ESP32 with servo, switch and probe; the model on footage from
   a real hostel floor. See "Before you submit".
 
+## Relationship to the CraftifAI PipeGen tool
+
+This repository's `pipegen/` package is a hand-written implementation of the Track A requirements: a TensorRT
+compile, and JSON over MQTT with `event_id, zone_id, timestamp, confidence, pool_area, growth_rate`. It was
+**not generated with CraftifAI's PipeGen tool**, which was not installed on the Windows machine this was built on.
+The model and a test clip are packaged so the pipeline can be rebuilt in PipeGen on a supported machine
+(an x86-64 Linux PC with an NVIDIA GPU, or a Jetson):
+
+| PipeGen input | Use |
+|---|---|
+| Model source: *Local, my own model file* | `models/leaklatch_waterseg.onnx` (opset 17), see [models/MODEL_CARD.md](models/MODEL_CARD.md) |
+| Model input | `image`: float32 `1×3×320×320`, RGB, ImageNet normalisation (mean 0.485/0.456/0.406, std 0.229/0.224/0.225) |
+| Model output | `logits`: float32 `1×1×320×320`; water = sigmoid(logit) ≥ 0.5 |
+| Video input: *My own video* | [docs/media/sample_input.mp4](docs/media/sample_input.mp4): 640×480, 10 fps, 60 s raw camera feed, leak → valve shut at 20 s (`tools/export_input_video.py`) |
+| Post-processing to reproduce | per-zone area via floor homography and growth rate via a 10 s least-squares slope (`pipegen/zones.py`, `pipegen/tracker.py`), then publish `contracts/leak_event.schema.json` over MQTT |
+
 ## Before you submit (team checklist)
 
 - [ ] Flash `firmgen` on the ESP32 and wire it per `docs/hardware.md`. Run the bench test in `firmgen/README.md`.
@@ -60,6 +78,6 @@ python -m simlab.run --all --backend onnxruntime                # 6 scenarios wi
 - [ ] Build the engine **on the Jetson**: `python -m pipegen.train.build_trt` (or `trtexec … --fp16`) and commit `models/trt_report.json`.
 - [x] Demo video with the real firmware in an emulated ESP32: `docs/media/leaklatch_demo.mp4`.
 - [ ] Optionally re-record on real hardware following `docs/demo-script.md`.
-- [ ] Fill in team names and photos below. Push to GitHub; CI builds the firmware and runs every test.
-
-**Team:** _names / roles_
+- [x] Participant details (above). Pushed to GitHub; CI builds the firmware and runs every test.
+- [ ] If PipeGen is available on a supported machine: import `models/leaklatch_waterseg.onnx` with
+      `docs/media/sample_input.mp4` as described above, and answer the PipeGen feedback form from that run.

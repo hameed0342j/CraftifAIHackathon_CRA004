@@ -8,6 +8,9 @@ with the camera that the leak stopped.
 > CraftifAI Physical AI Hackathon: **Track A PipeGen** (edge vision → TensorRT → MQTT) +
 > **Track B FirmGen** (ESP-IDF v5.5 valve node) + **closed-loop bonus** (perception → action → verification).
 > Requirement-by-requirement evidence: [SUBMISSION.md](SUBMISSION.md).
+> By **MUHAMMED AL HAMEED M** (participant CRA004). The `pipegen/` package is hand-written, not generated
+> by the CraftifAI PipeGen tool; [SUBMISSION.md](SUBMISSION.md#relationship-to-the-craftifai-pipegen-tool)
+> explains how to import the model into PipeGen.
 
 ![closed loop: TensorRT camera + real firmware in an emulated ESP32](docs/media/leak.gif)
 
