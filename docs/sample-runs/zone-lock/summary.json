@@ -1,0 +1,58 @@
+{
+  "scenario": "zone-lock",
+  "title": "Leak in the corridor only",
+  "backend": "tensorrt-11.4.0.106",
+  "duration_s": 80.0,
+  "wall_time_s": 32.0,
+  "messages": 51,
+  "invalid_messages": [],
+  "zones": {
+    "bathroom-1": {
+      "final_state": "IDLE",
+      "final_reason": "boot",
+      "leak_start_s": null,
+      "first_detect_s": null,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 36,
+      "accepted_events": 0,
+      "receipts": 0,
+      "max_true_area_m2": 0,
+      "water_lost_l": 0.0
+    },
+    "corridor-2": {
+      "final_state": "LATCHED",
+      "final_reason": "verified",
+      "leak_start_s": 4.0,
+      "first_detect_s": 9.7,
+      "valve_closed_s": 20.9,
+      "resolved_s": 34.7,
+      "ever_closed": true,
+      "zone_lock_rejections": 0,
+      "accepted_events": 36,
+      "receipts": 5,
+      "max_true_area_m2": 0.114,
+      "water_lost_l": 0.35
+    }
+  },
+  "checks": [
+    {
+      "check": "bathroom-1 ends IDLE (boot)",
+      "ok": true
+    },
+    {
+      "check": "bathroom-1 valve never closed",
+      "ok": true
+    },
+    {
+      "check": "corridor-2 ends LATCHED (verified)",
+      "ok": true
+    },
+    {
+      "check": "all messages satisfy the JSON schemas",
+      "ok": true
+    }
+  ],
+  "passed": true
+}

@@ -1,0 +1,112 @@
+menu "LeakLatch valve node"
+
+    menu "Network"
+        config LL_WIFI_SSID
+            string "Wi-Fi SSID"
+            default "leaklatch"
+        config LL_WIFI_PASSWORD
+            string "Wi-Fi password"
+            default "changeme123"
+        config LL_MQTT_URI
+            string "MQTT broker URI"
+            default "mqtt://192.168.1.10:1883"
+            help
+                mqtt://host:1883 or mqtts://host:8883. The Jetson usually runs the broker.
+        config LL_MQTT_USERNAME
+            string "MQTT username (empty = none)"
+            default ""
+        config LL_MQTT_PASSWORD
+            string "MQTT password"
+            default ""
+        config LL_SNTP_SERVER
+            string "SNTP server"
+            default "pool.ntp.org"
+    endmenu
+
+    menu "Identity"
+        config LL_TOPIC_PREFIX
+            string "Topic prefix"
+            default "leaklatch"
+        config LL_SITE_ID
+            string "Site id (one PG / hostel)"
+            default "pg-demo-01"
+        config LL_ZONE_ID
+            string "Zone id this valve protects"
+            default "bathroom-1"
+            help
+                Zone lock: the node only acts on leak events whose zone_id equals this value.
+    endmenu
+
+    menu "Hardware"
+        config LL_SERVO_GPIO
+            int "Servo signal GPIO"
+            default 18
+        config LL_SERVO_MIN_US
+            int "Servo pulse at 0 degrees (us)"
+            default 500
+        config LL_SERVO_MAX_US
+            int "Servo pulse at 180 degrees (us)"
+            default 2500
+        config LL_SERVO_OPEN_DEG
+            int "Servo angle: valve open"
+            range 0 180
+            default 0
+        config LL_SERVO_CLOSED_DEG
+            int "Servo angle: valve closed"
+            range 0 180
+            default 90
+        config LL_SERVO_HOLD
+            bool "Keep driving the servo after travel (otherwise PWM stops to save power)"
+            default n
+        config LL_LIMIT_GPIO
+            int "Closed-position limit switch GPIO"
+            default 27
+        config LL_LIMIT_ACTIVE_LOW
+            bool "Limit switch pulls the pin to GND when pressed"
+            default y
+        config LL_WET_GPIO
+            int "Wetness sensor analog GPIO (ADC1 pin, e.g. 34)"
+            default 34
+        config LL_WET_ACTIVE_LOW
+            bool "Raw reading falls when wet (FC-37 / YL-83 style modules)"
+            default y
+        config LL_WET_ON_RAW
+            int "Raw threshold that means wet"
+            default 1800
+        config LL_WET_OFF_RAW
+            int "Raw threshold that means dry again (hysteresis)"
+            default 2300
+        config LL_ALARM_GPIO
+            int "Alarm LED / buzzer GPIO (-1 = none)"
+            default 2
+    endmenu
+
+    menu "Decision policy"
+        config LL_MIN_CONFIDENCE_PCT
+            int "Minimum vision confidence (%)"
+            range 0 100
+            default 60
+        config LL_MIN_AREA_CM2
+            int "Minimum pool area (cm2)"
+            default 200
+        config LL_SUSPECT_TIMEOUT_S
+            int "Seconds to wait for local wetness after a vision event"
+            default 45
+        config LL_CONFIRM_HOLD_MS
+            int "Wetness must persist (ms)"
+            default 3000
+        config LL_CLOSE_TIMEOUT_MS
+            int "Limit switch must engage within (ms)"
+            default 5000
+        config LL_VERIFY_WINDOW_S
+            int "Hydraulic verification window (s)"
+            default 60
+        config LL_FAILSAFE_WET_S
+            int "Close on local wetness alone after (s, 0 = never)"
+            default 180
+        config LL_VISION_ONLY_AREA_CM2
+            int "Vision-only override pool area (cm2, 0 = off)"
+            default 0
+    endmenu
+
+endmenu

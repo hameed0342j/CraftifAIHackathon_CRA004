@@ -1,0 +1,42 @@
+# PipeGen deployment for one PG/hostel floor (run on the Jetson next to the MQTT broker).
+#   python -m pipegen --config configs/site.example.yaml --show
+site_id: pg-koramangala-01
+topic_prefix: leaklatch
+source: "0"                  # USB camera index, a video file, or rtsp://user:pass@cam-ip:554/stream1
+fps: 10
+
+mqtt:
+  host: localhost            # mosquitto on the Jetson
+  port: 1883
+  username: null
+  password: null
+  tls: false
+
+model:
+  backend: auto              # tensorrt if the engine loads, else onnxruntime
+  engine: models/leaklatch_waterseg.engine   # built on this device: python -m pipegen.train.build_trt
+  onnx: models/leaklatch_waterseg.onnx
+  input_size: 320
+  threshold: 0.5
+
+tracker:
+  min_area_m2: 0.02          # ignore footprints / splashes
+  on_frames: 5               # 0.5 s of persistent water before 'detect'
+  off_frames: 15
+  window_s: 10.0             # growth-rate regression window
+  update_period_s: 2.0
+  ema_alpha: 0.35
+
+evidence_dir: evidence
+snapshot_every: 5
+
+# Coordinates are fractions of the image (0..1). Calibrate a zone by putting four
+# tape marks on its floor, reading their pixel positions, and measuring them in metres.
+zones:
+  - id: bathroom-1
+    polygon: [[0.05, 0.35], [0.48, 0.35], [0.48, 0.98], [0.02, 0.98]]
+    floor_image_points: [[0.10, 0.40], [0.45, 0.40], [0.47, 0.95], [0.05, 0.95]]
+    floor_metric_points: [[0.0, 0.0], [1.5, 0.0], [1.5, 2.0], [0.0, 2.0]]
+  - id: corridor-2
+    polygon: [[0.52, 0.30], [0.98, 0.30], [0.99, 0.98], [0.52, 0.98]]
+    frame_area_m2: 9.0       # rough fallback when no tape-measure calibration is available

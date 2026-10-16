@@ -1,0 +1,19 @@
+{
+ "onnx": "leaklatch_waterseg.onnx",
+ "onnx_fp16": "leaklatch_waterseg_fp16.onnx",
+ "opset": 17,
+ "input": [
+  1,
+  3,
+  320,
+  320
+ ],
+ "max_abs_logit_diff_vs_torch": {
+  "fp32": 0.000118255615234375,
+  "fp16": 0.4526691436767578
+ },
+ "size_mb": {
+  "fp32": 12.87,
+  "fp16": 6.47
+ }
+}

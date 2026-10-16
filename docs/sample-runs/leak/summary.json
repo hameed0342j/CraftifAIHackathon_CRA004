@@ -1,0 +1,54 @@
+{
+  "scenario": "leak",
+  "title": "Leak under the wash-basin",
+  "backend": "tensorrt-11.4.0.106",
+  "duration_s": 110.0,
+  "wall_time_s": 43.8,
+  "messages": 72,
+  "invalid_messages": [],
+  "zones": {
+    "bathroom-1": {
+      "final_state": "IDLE",
+      "final_reason": "operator_reset",
+      "leak_start_s": 4.0,
+      "first_detect_s": 6.9,
+      "valve_closed_s": 18.4,
+      "resolved_s": 33.9,
+      "ever_closed": true,
+      "zone_lock_rejections": 0,
+      "accepted_events": 52,
+      "receipts": 6,
+      "max_true_area_m2": 0.1221,
+      "water_lost_l": 0.37
+    },
+    "corridor-2": {
+      "final_state": "IDLE",
+      "final_reason": "boot",
+      "leak_start_s": null,
+      "first_detect_s": null,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 52,
+      "accepted_events": 0,
+      "receipts": 0,
+      "max_true_area_m2": 0,
+      "water_lost_l": 0.0
+    }
+  },
+  "checks": [
+    {
+      "check": "bathroom-1 ends IDLE (operator_reset)",
+      "ok": true
+    },
+    {
+      "check": "corridor-2 ends IDLE (boot)",
+      "ok": true
+    },
+    {
+      "check": "all messages satisfy the JSON schemas",
+      "ok": true
+    }
+  ],
+  "passed": true
+}

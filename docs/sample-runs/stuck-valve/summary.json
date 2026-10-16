@@ -1,0 +1,50 @@
+{
+  "scenario": "stuck-valve",
+  "title": "Valve jammed half-way",
+  "backend": "tensorrt-11.4.0.106",
+  "duration_s": 60.0,
+  "wall_time_s": 23.9,
+  "messages": 43,
+  "invalid_messages": [],
+  "zones": {
+    "bathroom-1": {
+      "final_state": "FAULT",
+      "final_reason": "valve_not_closed",
+      "leak_start_s": 4.0,
+      "first_detect_s": 6.9,
+      "valve_closed_s": 18.4,
+      "resolved_s": 28.4,
+      "ever_closed": true,
+      "zone_lock_rejections": 0,
+      "accepted_events": 27,
+      "receipts": 5,
+      "max_true_area_m2": 0.2618,
+      "water_lost_l": 0.79
+    },
+    "corridor-2": {
+      "final_state": "IDLE",
+      "final_reason": "boot",
+      "leak_start_s": null,
+      "first_detect_s": null,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 27,
+      "accepted_events": 0,
+      "receipts": 0,
+      "max_true_area_m2": 0,
+      "water_lost_l": 0.0
+    }
+  },
+  "checks": [
+    {
+      "check": "bathroom-1 ends FAULT (valve_not_closed)",
+      "ok": true
+    },
+    {
+      "check": "all messages satisfy the JSON schemas",
+      "ok": true
+    }
+  ],
+  "passed": true
+}

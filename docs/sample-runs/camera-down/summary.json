@@ -1,0 +1,50 @@
+{
+  "scenario": "camera-down",
+  "title": "Camera offline: local fail-safe",
+  "backend": "tensorrt-11.4.0.106",
+  "duration_s": 330.0,
+  "wall_time_s": 7.0,
+  "messages": 28,
+  "invalid_messages": [],
+  "zones": {
+    "bathroom-1": {
+      "final_state": "LATCHED",
+      "final_reason": "mechanical_only",
+      "leak_start_s": 10.0,
+      "first_detect_s": null,
+      "valve_closed_s": 206.4,
+      "resolved_s": 266.4,
+      "ever_closed": true,
+      "zone_lock_rejections": 0,
+      "accepted_events": 0,
+      "receipts": 3,
+      "max_true_area_m2": 1.0816,
+      "water_lost_l": 3.28
+    },
+    "corridor-2": {
+      "final_state": "IDLE",
+      "final_reason": "boot",
+      "leak_start_s": null,
+      "first_detect_s": null,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 0,
+      "accepted_events": 0,
+      "receipts": 0,
+      "max_true_area_m2": 0,
+      "water_lost_l": 0.0
+    }
+  },
+  "checks": [
+    {
+      "check": "bathroom-1 ends LATCHED (mechanical_only)",
+      "ok": true
+    },
+    {
+      "check": "all messages satisfy the JSON schemas",
+      "ok": true
+    }
+  ],
+  "passed": true
+}

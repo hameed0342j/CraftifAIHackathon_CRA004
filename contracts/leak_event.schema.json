@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leaklatch.dev/schemas/leak_event/v1",
+  "title": "LeakLatch leak event (PipeGen -> FirmGen)",
+  "description": "Published by PipeGen on leaklatch/{site_id}/zone/{zone_id}/event (QoS 1, not retained). One message per detection, periodic update, or clear. Every message has a fresh event_id; messages belonging to one pooling incident share incident_id.",
+  "type": "object",
+  "required": ["schema", "event_id", "incident_id", "kind", "zone_id", "timestamp", "confidence", "pool_area", "growth_rate"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "leaklatch/leak_event/v1" },
+    "event_id": { "type": "string", "minLength": 8, "maxLength": 39, "description": "Unique per message (UUID4 hex). FirmGen de-duplicates on it." },
+    "incident_id": { "type": "string", "minLength": 8, "maxLength": 39 },
+    "kind": { "enum": ["detect", "update", "clear"] },
+    "site_id": { "type": "string", "maxLength": 48 },
+    "zone_id": { "type": "string", "minLength": 1, "maxLength": 23, "pattern": "^[a-z0-9][a-z0-9_-]*$" },
+    "timestamp": { "type": "string", "format": "date-time", "description": "UTC, ISO 8601 with milliseconds and Z suffix." },
+    "seq": { "type": "integer", "minimum": 0 },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "pool_area": { "type": "number", "minimum": 0, "description": "Floor area covered by pooled water inside the zone, square metres (perspective-corrected when the zone has a homography)." },
+    "growth_rate": { "type": "number", "description": "Least-squares slope of pool_area over the tracking window, square metres per minute. Negative = shrinking." },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "snapshot": { "type": "string", "description": "Path of the annotated JPEG kept on the edge device." },
+        "snapshot_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "model": { "type": "string" },
+        "model_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "backend": { "type": "string" },
+        "window_s": { "type": "number", "minimum": 0 },
+        "persistence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "frames": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

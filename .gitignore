@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+build/
+firmgen/build/
+firmgen/build.log
+firmgen/sdkconfig
+firmgen/sdkconfig.old
+firmgen/managed_components/
+data/
+runs/
+runs_*/
+/evidence/
+models/*.pt
+*.mp4
+!docs/media/*.mp4

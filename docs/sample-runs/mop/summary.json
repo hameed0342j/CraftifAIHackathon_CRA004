@@ -1,0 +1,54 @@
+{
+  "scenario": "mop",
+  "title": "Bucket spill being mopped (false-positive trap)",
+  "backend": "tensorrt-11.4.0.106",
+  "duration_s": 90.0,
+  "wall_time_s": 34.3,
+  "messages": 42,
+  "invalid_messages": [],
+  "zones": {
+    "bathroom-1": {
+      "final_state": "IDLE",
+      "final_reason": "vision_unconfirmed",
+      "leak_start_s": 4.0,
+      "first_detect_s": 4.4,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 0,
+      "accepted_events": 30,
+      "receipts": 2,
+      "max_true_area_m2": 0.2995,
+      "water_lost_l": 0.0
+    },
+    "corridor-2": {
+      "final_state": "IDLE",
+      "final_reason": "boot",
+      "leak_start_s": null,
+      "first_detect_s": null,
+      "valve_closed_s": null,
+      "resolved_s": null,
+      "ever_closed": false,
+      "zone_lock_rejections": 31,
+      "accepted_events": 0,
+      "receipts": 0,
+      "max_true_area_m2": 0,
+      "water_lost_l": 0.0
+    }
+  },
+  "checks": [
+    {
+      "check": "bathroom-1 valve never closed",
+      "ok": true
+    },
+    {
+      "check": "corridor-2 valve never closed",
+      "ok": true
+    },
+    {
+      "check": "all messages satisfy the JSON schemas",
+      "ok": true
+    }
+  ],
+  "passed": true
+}

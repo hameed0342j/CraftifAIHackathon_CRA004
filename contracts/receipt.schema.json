@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leaklatch.dev/schemas/receipt/v1",
+  "title": "LeakLatch action receipt (FirmGen -> audit trail)",
+  "description": "Published by FirmGen on leaklatch/{site_id}/zone/{zone_id}/receipt (QoS 1, not retained) for every state transition. Chaining trigger_event_id (the vision evidence) -> CLOSED (the action) -> LATCHED with verification (the proof) is the evidence-to-action chain.",
+  "type": "object",
+  "required": ["schema", "zone_id", "seq", "from", "to", "reason", "trigger_event_id", "uptime_ms", "evidence", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "leaklatch/receipt/v1" },
+    "zone_id": { "type": "string" },
+    "seq": { "type": "integer", "minimum": 0 },
+    "from": { "enum": ["IDLE", "SUSPECT", "CONFIRMING", "CLOSED", "VERIFYING", "LATCHED", "FAULT"] },
+    "to": { "enum": ["IDLE", "SUSPECT", "CONFIRMING", "CLOSED", "VERIFYING", "LATCHED", "FAULT"] },
+    "reason": { "type": "string" },
+    "trigger_event_id": { "type": "string", "description": "event_id of the vision event that opened the incident, or 'operator' / 'failsafe'." },
+    "last_event_id": { "type": "string" },
+    "uptime_ms": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string" },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confidence", "pool_area", "growth_rate", "wet", "limit_switch"],
+      "properties": {
+        "confidence": { "type": "number" },
+        "pool_area": { "type": "number" },
+        "growth_rate": { "type": "number" },
+        "wet": { "type": "boolean" },
+        "wetness_raw": { "type": "integer" },
+        "limit_switch": { "type": "boolean" }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mechanical", "hydraulic", "close_attempts"],
+      "properties": {
+        "mechanical": { "type": "boolean", "description": "Limit switch confirmed the valve reached the closed stop." },
+        "mechanical_ms": { "type": "integer", "minimum": 0, "description": "Milliseconds from first close command to limit-switch contact." },
+        "hydraulic": { "type": "boolean", "description": "Vision confirmed the pool stopped growing after closure." },
+        "growth_after_close": { "type": "number" },
+        "close_attempts": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

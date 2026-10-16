@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  python-and-fsm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install numpy opencv-python-headless pyyaml paho-mqtt jsonschema onnxruntime pytest
+      - name: Firmware state machine host tests (gcc)
+        run: python tools/build_native.py
+      - name: PipeGen + closed-loop simulator tests
+        run: LEAKLATCH_ALL=1 python -m pytest -q
+
+  firmware:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ESP-IDF v5.5 build
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.5
+          target: esp32
+          path: firmgen
+      - uses: actions/upload-artifact@v4
+        with:
+          name: leaklatch-firmgen-esp32
+          path: |
+            firmgen/build/leaklatch_firmgen.bin
+            firmgen/build/bootloader/bootloader.bin
+            firmgen/build/partition_table/partition-table.bin
+            firmgen/build/flash_args

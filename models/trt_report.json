@@ -1,0 +1,23 @@
+{
+ "tensorrt": "11.4.0.106",
+ "precision": "fp16 (strongly typed)",
+ "onnx": "leaklatch_waterseg_fp16.onnx",
+ "build_s": 35.9,
+ "gpu": "NVIDIA GeForce RTX 5070 Ti Laptop GPU",
+ "engine": "leaklatch_waterseg.engine",
+ "engine_sha256": "fa98498d8f4cbce54e5e78c7d4d93c3582f381896039ed20a28b264606a01139",
+ "engine_mb": 8.62,
+ "latency_ms": {
+  "mean": 1.577,
+  "p50": 1.395,
+  "p99": 3.084
+ },
+ "throughput_fps": 634.1,
+ "onnxruntime_cpu_ms": 4.18,
+ "parity_vs_onnxruntime": {
+  "images": 80,
+  "max_prob_diff": 0.0186,
+  "mean_mask_iou": 0.9971
+ },
+ "note": "latency = host->device copy + inference + device->host copy, batch 1, 320x320"
+}

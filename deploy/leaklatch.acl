@@ -1,0 +1,20 @@
+# Least privilege: the camera can only report evidence, a valve node can only
+# report about itself, and only the warden can send commands.
+# sudo cp deploy/leaklatch.acl /etc/mosquitto/leaklatch.acl
+
+user pipegen
+topic write leaklatch/+/zone/+/event
+topic write leaklatch/+/pipegen/health
+topic read leaklatch/+/zone/+/state
+topic read leaklatch/+/zone/+/receipt
+
+# one user per valve node; repeat for each zone
+user node-bathroom-1
+topic read leaklatch/+/zone/+/event
+topic read leaklatch/+/zone/bathroom-1/cmd
+topic write leaklatch/+/zone/bathroom-1/state
+topic write leaklatch/+/zone/bathroom-1/receipt
+
+user warden
+topic read leaklatch/#
+topic write leaklatch/+/zone/+/cmd

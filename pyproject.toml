@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "leaklatch"
+version = "1.0.0"
+description = "Zone-locked evidence-to-action chain for water leaks: edge vision (PipeGen) + ESP32 valve nodes (FirmGen)"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.24",
+    "opencv-python>=4.8",
+    "PyYAML>=6",
+    "paho-mqtt>=2.0",
+    "jsonschema>=4.18",
+    "onnxruntime>=1.16",
+]
+
+[project.optional-dependencies]
+train = ["torch>=2.1", "torchvision>=0.16", "onnx>=1.15", "onnxscript"]
+tensorrt = ["tensorrt", "cuda-python"]
+dev = ["pytest>=8", "ziglang", "amqtt"]
+
+[tool.setuptools]
+packages = ["pipegen", "pipegen.train", "simlab"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

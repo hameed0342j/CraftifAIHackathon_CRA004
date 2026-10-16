@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leaklatch.dev/schemas/command/v1",
+  "title": "LeakLatch operator command (dashboard -> FirmGen)",
+  "description": "Published on leaklatch/{site_id}/zone/{zone_id}/cmd (QoS 1, not retained). 'reset' reopens the valve after the operator has fixed the leak; 'close' is a manual shut-off.",
+  "type": "object",
+  "required": ["schema", "cmd"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "leaklatch/command/v1" },
+    "cmd": { "enum": ["reset", "close"] },
+    "by": { "type": "string", "maxLength": 48 },
+    "timestamp": { "type": "string" }
+  }
+}

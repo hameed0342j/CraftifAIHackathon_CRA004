@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://leaklatch.dev/schemas/device_state/v1",
+  "title": "LeakLatch valve node state (FirmGen -> everyone)",
+  "description": "Published by FirmGen on leaklatch/{site_id}/zone/{zone_id}/state, retained, QoS 1, on every change and every 30 s. The broker Last Will on the same topic is {\"schema\":\"leaklatch/device_state/v1\",\"zone_id\":...,\"online\":false}.",
+  "type": "object",
+  "required": ["schema", "zone_id", "online"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "leaklatch/device_state/v1" },
+    "zone_id": { "type": "string" },
+    "online": { "type": "boolean" },
+    "state": { "enum": ["IDLE", "SUSPECT", "CONFIRMING", "CLOSED", "VERIFYING", "LATCHED", "FAULT"] },
+    "reason": { "type": "string" },
+    "valve": { "enum": ["open", "closed"], "description": "Commanded position." },
+    "limit_switch": { "type": "boolean", "description": "true = closed-position limit switch is pressed (mechanical proof of closure)." },
+    "wet": { "type": "boolean" },
+    "wetness_raw": { "type": "integer" },
+    "incident_event_id": { "type": "string" },
+    "uptime_ms": { "type": "integer", "minimum": 0 },
+    "timestamp": { "type": "string" },
+    "fw": { "type": "string" },
+    "counters": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accepted": { "type": "integer", "minimum": 0 },
+        "zone_mismatch": { "type": "integer", "minimum": 0 },
+        "duplicate": { "type": "integer", "minimum": 0 },
+        "rejected": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}
