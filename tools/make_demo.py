@@ -18,7 +18,7 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from simlab.run import VideoSink  # noqa: E402
+from pipegen.video import VideoSink  # noqa: E402
 
 W, H, FPS = 1280, 720, 20
 BG = (24, 20, 16)
@@ -65,6 +65,40 @@ def play(path: Path, sink: VideoSink, start_s: float = 0.0, end_s: float | None 
         sink.write(f)
 
 
+def play_real(video: Path, events_jsonl: Path, sink: VideoSink, start_s: float, end_s: float, every: int,
+              title: str, notes: list[str], credit: str) -> None:
+    """Annotated real footage (portrait) on the left, the live leak_event stream on the right."""
+    recs = [json.loads(ln) for ln in events_jsonl.read_text(encoding="utf-8").splitlines() if ln.strip()]
+    cap = cv2.VideoCapture(str(video))
+    fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    a, b = int(start_s * fps), int(end_s * fps)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, a)
+    for i in range(a, b):
+        ok, f = cap.read()
+        if not ok:
+            break
+        if (i - a) % every:
+            continue
+        frame = np.full((H, W, 3), BG, np.uint8)
+        fw = int(f.shape[1] * H / f.shape[0])
+        frame[:, :fw] = cv2.resize(f, (fw, H))
+        x = fw + 28
+        text(frame, title, (x, 50), 0.95, ACCENT, 2)
+        for k, ln in enumerate(notes):
+            text(frame, ln, (x, 92 + 30 * k), 0.58, (230, 230, 230))
+        y = 92 + 30 * len(notes) + 30
+        text(frame, "leak_event JSON over MQTT (latest first)", (x, y), 0.6, ACCENT, 1)
+        shown = [r for r in recs if r["frame"] <= i][-7:][::-1]
+        for k, r in enumerate(shown):
+            e = r["event"]
+            line = (f"{r['video_time_s']:5.1f}s  {e['kind']:6s} zone={e['zone_id']}  area={e['pool_area']:.2f}  "
+                    f"growth={e['growth_rate']:+.1f}  conf={e['confidence']:.2f}")
+            col = (90, 220, 90) if e["kind"] == "detect" else (200, 200, 200) if e["kind"] == "update" else (80, 80, 255)
+            cv2.putText(frame, line, (x, y + 34 + 28 * k), cv2.FONT_HERSHEY_PLAIN, 1.15, col, 1, cv2.LINE_AA)
+        text(frame, credit, (x, H - 22), 0.45, (150, 150, 150))
+        sink.write(frame)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
@@ -107,6 +141,28 @@ def main() -> None:
          caption=["The valve closes and the limit switch confirms, but the camera sees the pool keep growing.",
                   "FAULT leak_persists: the water is not coming through this valve. Look elsewhere."])
 
+    real = args.runs / "real-smu"
+    if (real / "annotated.mp4").exists():
+        card([("3.  Real footage, honestly", 300, 1.4, white, 3),
+              ("A real burst water pipe (Singapore Management University, 2017), found on Wikimedia Commons", 380, 0.62,
+               grey, 1),
+              ("Same TensorRT model and pipeline: 1,658 frames at 90 fps end to end, 28 schema-valid leak events", 420,
+               0.62, grey, 1),
+              ("It catches puddles and pooling on paving; it misses a large reflective indoor flood.", 460, 0.62,
+               ACCENT, 1),
+              ("That gap is why LeakLatch never shuts a valve on the camera alone.", 500, 0.62, ACCENT, 1)],
+             4.0, sink)
+        play_real(real / "annotated.mp4", real / "events.jsonl", sink, 14, 50, every=2,
+                  title="Real input: burst pipe (2x)",
+                  notes=["Blue = pixels the model calls water. Zone 'floor' = lower half of the frame.",
+                         "Caught: the pool around the worker's feet and the flooded paving.",
+                         "Missed: most of the shiny orange indoor floor (thin reflective film).",
+                         "False hits on glass and windows above the floor zone are ignored by the zone.",
+                         "Growth rate jumps around because this is a moving handheld phone;",
+                         "LeakLatch assumes a fixed, wall-mounted camera."],
+                  credit="Footage: 'Flooding at the School of Law, Singapore Management University - 20170122', "
+                         "Smuconlaw, CC BY-SA 4.0")
+
     card([("Results", 140, 1.5, ACCENT, 3),
           ("6 / 6 closed-loop scenarios pass  |  every MQTT message validated against JSON Schemas", 230, 0.7, white, 1),
           ("TensorRT %s FP16: %.2f ms p50, %.0f FPS  |  0.997 mask agreement with ONNX" % (
@@ -114,7 +170,7 @@ def main() -> None:
           ("FirmGen: ESP-IDF v5.5 build, runs in QEMU, 128 host checks of the state machine", 350, 0.7, white, 1),
           ("Survives a power cut: LATCHED restored from flash, valve stays shut", 410, 0.7, white, 1),
           ("~1.5-2.5k INR per zone: ESP32 + servo + ball valve + limit switch + probe", 470, 0.7, white, 1),
-          ("github.com/hameed0342j/LeakLatch", 580, 0.95, ACCENT, 2)],
+          ("github.com/hameed0342j/CraftifAIHackathon_CRA004", 580, 0.95, ACCENT, 2)],
          7.0, sink)
     sink.close()
     print(f"wrote {args.out} ({args.out.stat().st_size / 1e6:.1f} MB)")

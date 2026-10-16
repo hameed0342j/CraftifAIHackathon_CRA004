@@ -14,9 +14,50 @@ with the camera that the leak stopped.
 
 ![closed loop: TensorRT camera + real firmware in an emulated ESP32](docs/media/leak.gif)
 
-▶ **[Demo video (1 min 50 s, 720p)](docs/media/leaklatch_demo.mp4)**: the real FirmGen firmware flashed into
-an emulated ESP32 (Espressif QEMU) closes a leaking zone, proves it, survives a power cut, then four
-"don't cry wolf" scenarios. Script: [docs/demo-script.md](docs/demo-script.md).
+▶ **[Demo video (2 min 22 s, 720p)](docs/media/leaklatch_demo.mp4)**:
+1. The real FirmGen firmware, flashed into an emulated ESP32 (Espressif QEMU), closes a leaking zone, proves it, and survives a power cut.
+2. Four "don't cry wolf" scenarios.
+3. The pipeline on real burst-pipe footage, with what it catches and what it misses.
+
+Script: [docs/demo-script.md](docs/demo-script.md).
+
+## At a glance (the buildathon questions)
+
+| Question | Answer |
+|---|---|
+| What does it do? | A camera spots water pooling and spreading in a zone. An ESP32 at that zone's valve double-checks with a floor probe, shuts off that zone's water, and proves the leak stopped. |
+| Who is it for? | The warden or owner of a PG or hostel in an Indian city (20–60 residents sharing bathrooms). Today a burst hose is found hours later, and the only fix is the building main. A 1.5 L/min leak wastes ~90 L an hour. In our closed-loop test the zone valve closed 18 s after the leak began and 0.37 L was lost; everyone else kept their water. |
+| Area | Housing and water conservation (shared accommodation) |
+| Outputs | Live display, saved annotated video, evidence snapshots (JPEG + SHA-256), JSON event log, MQTT `leak_event`, and on top of that: the ESP32 valve node, per-transition receipts, a warden console and HTML incident reports |
+| Who acts on it? | The zone's ESP32 node acts first: it closes the valve after its own probe agrees. The warden gets receipts with photo and reason, and resets the valve after the repair. A jammed valve or a source not behind the valve raises FAULT with an alarm. |
+| Inputs tested | Real found footage of a burst pipe ([below](#real-footage)); a 60 s sample clip ([docs/media/sample_input.mp4](docs/media/sample_input.mp4)); the closed-loop simulator's camera |
+| Steps | 1. Frames in. 2. TensorRT water segmentation. 3. Zone polygon + floor homography → pool area in m². 4. 5-frame persistence, EMA, 10 s least-squares growth rate. 5. `leak_event` over MQTT every 2 s with snapshot. 6. ESP32: zone lock → probe confirms for 3 s → servo closes the valve → limit switch proves it → camera proves the growth stopped. Built by hand; there was no PipeGen-generated graph to start from. |
+| Speed | RTX 5070 Ti Laptop GPU, TensorRT 11.4 FP16: **1.40 ms** per frame (p50, incl. copies). End to end on real 1080×1440 footage (decode + inference + overlay + H.264 record): **90 fps**. The use case needs 1–2 fps. Not measured on a Jetson. |
+| Not handled yet | Large reflective indoor floods (see below). The model has not seen real hostel floors. The firmware has run in QEMU, not on a physical board. Growth rate assumes a fixed camera. Each zone needs a one-time floor calibration. |
+
+## Real footage
+
+[`configs/real_smu.yaml`](configs/real_smu.yaml) runs the unchanged pipeline on *Flooding at the School of Law,
+Singapore Management University – 20170122*, a real burst water pipe filmed on a phone
+([Smuconlaw, CC BY-SA 4.0, Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Flooding_at_the_School_of_Law,_Singapore_Management_University_-_20170122.webm)):
+
+```bash
+python -m pipegen --config configs/real_smu.yaml --resize 540 --no-mqtt \
+    --events-jsonl runs/real-smu/events.jsonl --record runs/real-smu/annotated.mp4
+```
+
+![real footage: caught (left, middle), missed (right)](docs/media/real_footage.jpg)
+
+* **Throughput:** 1,658 frames in 18.4 s, about **90 fps** end to end.
+* **Events:** 28 `leak_event` messages, all schema-valid ([event log](docs/sample-runs/real-smu/events.jsonl)).
+* **Caught:** the pool around the worker's feet and the flooded paving (left, middle).
+* **Missed:** most of the large, shiny indoor flood (right). A thin reflective film on orange tiles looks nothing like the training data.
+* **False hits:** glass railings and dark windows. They fall outside the floor zone, so they don't count.
+* **Growth rate:** swings wildly because the phone moves. LeakLatch is designed for a fixed, wall-mounted camera.
+
+This is why no valve ever closes on the camera alone. Closing a real deployment's gap needs a few hundred
+labelled frames from the actual building (see [SUBMISSION.md](SUBMISSION.md)).
+*Figure and demo segment are derived from that footage, CC BY-SA 4.0.*
 
 ## Why
 

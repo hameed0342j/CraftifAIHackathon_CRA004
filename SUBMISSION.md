@@ -2,7 +2,7 @@
 
 **LeakLatch**: a zone-locked evidence-to-action chain that shuts off water leaks in PGs and hostels, and proves it did.
 
-**Participant:** MUHAMMED AL HAMEED M · participant ID **CRA004** · repository https://github.com/hameed0342j/LeakLatch
+**Participant:** MUHAMMED AL HAMEED M · participant ID **CRA004** · repository https://github.com/hameed0342j/CraftifAIHackathon_CRA004
 
 ## Requirement → evidence
 
@@ -46,6 +46,9 @@ python -m simlab.run --all --backend onnxruntime                # 6 scenarios wi
 
 * **Real:** the trained model and its TensorRT engine, the PipeGen pipeline, the MQTT contract, the ESP-IDF
   firmware (compiles for ESP32), and the state machine. The simulator links the same C object the ESP32 runs.
+* **Real input:** found footage of a burst water pipe (CC BY-SA 4.0, see README "Real footage"). The pipeline
+  runs on it at 90 fps end to end and emits 28 schema-valid events. It catches puddles and pooling on paving,
+  and misses a large reflective indoor flood.
 * **Emulated:** the ESP32 itself, for the demo. The production firmware runs in Espressif QEMU with Ethernet
   instead of Wi-Fi and virtual pins instead of GPIO/ADC/LEDC
   ([demo video](docs/media/leaklatch_demo.mp4)).

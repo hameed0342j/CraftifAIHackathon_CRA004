@@ -8,6 +8,15 @@
   to coarse masks (`pipegen/train/prepare.py`). The dataset itself is not redistributed in this repository.
 * **Synthetic indoor floors.** Generated procedurally by `simlab/render.py` (this repository, MIT).
 
+## Real test footage
+
+* **"Flooding at the School of Law, Singapore Management University - 20170122"** by Smuconlaw,
+  Wikimedia Commons, **CC BY-SA 4.0**:
+  https://commons.wikimedia.org/wiki/File:Flooding_at_the_School_of_Law,_Singapore_Management_University_-_20170122.webm
+  The clip itself is not redistributed here. `docs/media/real_footage.jpg` and the "Real footage" segment of
+  `docs/media/leaklatch_demo.mp4` are adaptations: frames with the model's water mask and labels overlaid.
+  Those adaptations are licensed under **CC BY-SA 4.0**.
+
 ## Model and libraries
 
 * torchvision LR-ASPP MobileNetV3-Large and its ImageNet backbone weights: BSD-3-Clause.

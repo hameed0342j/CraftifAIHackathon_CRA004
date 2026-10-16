@@ -1,0 +1,34 @@
+# PipeGen on real footage: "Flooding at the School of Law, Singapore Management University - 20170122"
+# by Smuconlaw, CC BY-SA 4.0, https://commons.wikimedia.org/wiki/File:Flooding_at_the_School_of_Law,_Singapore_Management_University_-_20170122.webm
+# (a burst water pipe; handheld phone video, 1080x1440, 55 s). Download it to data/real_video/smu_burst_pipe.webm, then:
+#   python -m pipegen --config configs/real_smu.yaml --resize 540 --no-mqtt \
+#       --events-jsonl runs/real-smu/events.jsonl --record runs/real-smu/annotated.mp4
+# The camera moves, so the single zone is simply the floor half of the frame, and the area scale is a rough
+# guess (no tape-measure calibration is possible on found footage): treat pool_area as relative.
+site_id: smu-real-footage
+topic_prefix: leaklatch
+source: data/real_video/smu_burst_pipe.webm
+fps: 30
+
+model:
+  backend: auto
+  engine: models/leaklatch_waterseg.engine
+  onnx: models/leaklatch_waterseg.onnx
+  input_size: 320
+  threshold: 0.5
+
+tracker:
+  min_area_m2: 0.05
+  on_frames: 15          # 0.5 s at 30 fps
+  off_frames: 45
+  window_s: 10.0
+  update_period_s: 2.0
+  ema_alpha: 0.2
+
+evidence_dir: runs/real-smu/evidence
+snapshot_every: 3
+
+zones:
+  - id: floor
+    polygon: [[0.0, 0.45], [1.0, 0.45], [1.0, 1.0], [0.0, 1.0]]
+    frame_area_m2: 20.0
