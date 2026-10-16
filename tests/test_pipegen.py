@@ -63,6 +63,15 @@ def test_topic_matching(pattern, topic, ok):
     assert topic_matches(pattern, topic) is ok
 
 
+@pytest.mark.parametrize("a,b,ok", [
+    ("x/#", "x/zone/+/event", True), ("x/zone/+/event", "x/zone/a/event", True),
+    ("x/zone/a/event", "x/zone/+/event", False), ("x/zone/+/event", "x/#", False),
+])
+def test_filter_covers(a, b, ok):
+    from pipegen.transport import filter_covers
+    assert filter_covers(a, b) is ok
+
+
 def test_inproc_bus_replays_retained():
     bus = InprocBus()
     bus.publish("a/b/state", {"x": 1}, retain=True)

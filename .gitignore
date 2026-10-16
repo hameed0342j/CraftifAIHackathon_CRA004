@@ -15,3 +15,5 @@ runs_*/
 models/*.pt
 *.mp4
 !docs/media/*.mp4
+firmgen/build_qemu/
+firmgen/build_qemu.log

@@ -4,8 +4,11 @@ ESP32 nodes (real C state machine) -> valve -> world.
     python -m simlab.run --scenario leak --backend onnxruntime
     python -m simlab.run --all --backend oracle --no-video      # fast regression run
     python -m simlab.run --scenario leak --mqtt localhost:1883  # through a real broker
+    python -m simlab.run --scenario leak --backend tensorrt --mqtt localhost:1883 \
+        --qemu-zone bathroom-1 --power-cut 58,5                  # real firmware in an emulated ESP32
 
-Writes runs/<scenario>/{demo.mp4, messages.jsonl, timeline.json, summary.json, report.html, evidence/}.
+Writes runs/<scenario>/{demo.mp4, messages.jsonl, timeline.json, summary.json, report.html, evidence/}
+(+ esp32_serial.log in QEMU mode).
 """
 
 from __future__ import annotations
@@ -13,6 +16,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import time
 from pathlib import Path
 
@@ -27,12 +31,91 @@ from pipegen.transport import InprocBus, MqttBus
 
 from . import report
 from .device import VirtualValveNode
+from .firmware_node import FirmwareNode
 from .scenarios import SCENARIOS, Scenario
 from .world import ZONES, World
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE, PREFIX = "pg-demo-01", "leaklatch"
 log = logging.getLogger("simlab")
+
+
+class VideoSink:
+    """H.264 (plays in browsers and on GitHub) via imageio-ffmpeg when installed, else OpenCV mp4v."""
+
+    def __init__(self, path: Path, fps: float, size: tuple[int, int]) -> None:
+        self.size = size
+        try:
+            import imageio_ffmpeg
+
+            self._gen = imageio_ffmpeg.write_frames(str(path), size, fps=fps, codec="libx264", pix_fmt_in="bgr24",
+                                                    pix_fmt_out="yuv420p", quality=7, macro_block_size=8)
+            self._gen.send(None)
+            self._cv = None
+        except ImportError:
+            self._gen = None
+            self._cv = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"mp4v"), fps, size)
+
+    def write(self, frame: np.ndarray) -> None:
+        if frame.shape[1::-1] != self.size:
+            frame = cv2.resize(frame, self.size)
+        if self._gen is not None:
+            self._gen.send(np.ascontiguousarray(frame))
+        else:
+            self._cv.write(frame)
+
+    def close(self) -> None:
+        if self._gen is not None:
+            self._gen.close()
+        else:
+            self._cv.release()
+
+
+STAGE = {  # caption for the firmware zone, by (state, reason) then state
+    ("IDLE", "operator_reset"): "Warden resets after the repair: valve reopens; the leftover puddle is ignored (same incident).",
+    ("LATCHED", "verified"): "Camera: pool stopped growing. Loop closed and VERIFIED (limit switch + camera).",
+    ("LATCHED", "restored_after_reboot"): "ESP32 rebooted: LATCHED restored from flash (NVS). The valve stays shut.",
+    ("LATCHED", "mechanical_only"): "No camera after closing: latched on the limit switch alone.",
+    ("FAULT", "valve_not_closed"): "Limit switch never closed: FAULT, alarm on. Someone must check the valve.",
+    ("FAULT", "leak_persists"): "Valve shut but the pool keeps growing: FAULT. The source is not behind this valve.",
+    "SUSPECT": "PipeGen (TensorRT) sees water pooling -> leak_event over MQTT -> ESP32: SUSPECT, checking its probe.",
+    "CONFIRMING": "The wetness probe agrees with the camera: two independent senses -> CONFIRMING.",
+    "CLOSED": "ESP32 firmware drives the servo: the zone valve is closing.",
+    "VERIFYING": "Limit switch pressed: valve mechanically closed. Now the camera must see the growth stop...",
+    "OFFLINE": "ESP32 is off / not on MQTT.",
+    "BOOTING": "ESP32 booting the FirmGen image...",
+}
+
+
+def caption_for(sc: Scenario, world: World, node, power_off: bool, lost_l: float) -> str:
+    if power_off:
+        return "POWER CUT: the ESP32 is off. The ball valve holds its position."
+    st, rs = node.fsm.state, node.fsm.reason
+    text = STAGE.get((st, rs)) or STAGE.get(st)
+    if text:
+        if st == "LATCHED" and rs == "verified":
+            text += f"  Water lost: {lost_l:.2f} L."
+        return text
+    leak = next((L for L in sc.leaks if L.zone == node.zone), None)
+    if leak and world.t >= leak.start_s and not node.receipts:
+        return f"A pipe joint in {node.zone} starts leaking ({leak.flow_lpm or leak.initial_l:.1f} L/min)..."
+    return "Normal: valve open, floor dry. One camera + PipeGen (TensorRT) watching both zones."
+
+
+_SERIAL_KEEP = re.compile(r"leaklatch|ll_hw_sim|ll_net|ll_store|=====|esp_netif_handlers|app_main")
+
+
+def draw_console(lines: list[str], caption: str, title: str) -> np.ndarray:
+    strip = np.full((240, 1280, 3), 12, np.uint8)
+    strip[:56] = (40, 32, 20)
+    _text(strip, caption, (16, 36), 0.62, (255, 255, 255), 1)
+    _text(strip, title, (16, 80), 0.5, (0, 200, 255))
+    shown = [ln for ln in lines if _SERIAL_KEEP.search(ln)][-7:]
+    for k, ln in enumerate(shown):
+        col = (90, 220, 90) if ln.startswith("I ") else (0, 200, 255) if ln.startswith("W ") else \
+            (80, 80, 255) if ln.startswith("E ") else (200, 200, 200)
+        cv2.putText(strip, ln[:150], (16, 106 + 19 * k), cv2.FONT_HERSHEY_PLAIN, 1.05, col, 1, cv2.LINE_AA)
+    return strip
 
 
 def _text(img, s, xy, scale=0.5, col=(235, 235, 235), thick=1):
@@ -50,6 +133,8 @@ def draw_panel(world: World, nodes: dict, sc: Scenario, pipe: Pipeline, receipts
         col = STATE_COLOURS.get(st, (200, 200, 200))
         cv2.rectangle(p, (10, y0), (630, y0 + 150), (55, 55, 55), 1)
         _text(p, z.id, (20, y0 + 24), 0.6, (255, 255, 255))
+        kind = getattr(node, "kind", "virtual node (same C state machine)")
+        _text(p, kind, (20, y0 + 42), 0.38, (0, 200, 255) if "QEMU" in kind else (150, 150, 150))
         cv2.rectangle(p, (170, y0 + 6), (330, y0 + 32), col, -1)
         _text(p, st, (178, y0 + 26), 0.6, (0, 0, 0), 2)
         _text(p, node.fsm.reason, (340, y0 + 26), 0.45, (200, 200, 200))
@@ -90,10 +175,13 @@ def no_signal(t: float) -> np.ndarray:
 
 def run(name: str, backend: str = "oracle", out: Path | None = None, video: bool = True, fps: float = 10.0,
         seed: int = 7, mqtt: str | None = None, speed: float = 2.0, show: bool = False,
-        onnx: str | None = None, engine: str | None = None) -> dict:
+        onnx: str | None = None, engine: str | None = None, qemu_zone: str | None = None,
+        power_cut: tuple[float, float] | None = None) -> dict:
     sc = SCENARIOS[name]
     out = out or ROOT / "runs" / name
     out.mkdir(parents=True, exist_ok=True)
+    if qemu_zone and not mqtt:
+        mqtt = "localhost:1883"  # the emulated ESP32 reaches the host broker at 10.0.2.2
     world = World(sc, seed)
     epoch = time.time()
     clock = lambda: epoch + world.t  # noqa: E731  simulated wall clock
@@ -104,8 +192,8 @@ def run(name: str, backend: str = "oracle", out: Path | None = None, video: bool
         bus = MqttBus(host, int(port or 1883), client_id=f"simlab-{name}", queued=True)
         if not bus.wait_connected(10):
             raise SystemExit(f"MQTT broker {mqtt} not reachable")
-        bus.subscribe(f"{PREFIX}/{SITE}/#", lambda tp, pl: records.append({"t": round(world.t, 2), "topic": tp,
-                                                                         "payload": pl}))
+        bus.subscribe(f"{PREFIX}/{SITE}/#", lambda tp, pl: None if "/sim/" in tp else records.append(
+            {"t": round(world.t, 2), "topic": tp, "payload": pl}))
     else:
         bus = InprocBus()
         bus.tap.append(lambda tp, pl, retain: records.append({"t": round(world.t, 2), "topic": tp, "payload": pl}))
@@ -116,18 +204,45 @@ def run(name: str, backend: str = "oracle", out: Path | None = None, video: bool
                      evidence_dir=str(out / "evidence"), fps=fps)
     seg = load_segmenter(model.backend, model.input_size, model.engine, model.onnx)
     pipe = Pipeline(cfg, seg, bus)
-    nodes = {z.id: VirtualValveNode(bus, world, z.id, SITE, PREFIX, clock) for z in ZONES}
+    nodes = {z.id: (FirmwareNode(bus, world, z.id, SITE, PREFIX) if z.id == qemu_zone
+                    else VirtualValveNode(bus, world, z.id, SITE, PREFIX, clock)) for z in ZONES}
 
-    writer = None
-    if video:
-        writer = cv2.VideoWriter(str(out / "demo.mp4"), cv2.VideoWriter_fourcc(*"mp4v"), fps * speed, (1280, 480))
+    esp = None
+    if qemu_zone:
+        from .qemu import QemuEsp32
+
+        esp = QemuEsp32(out)
+        esp.start()
+        fw = nodes[qemu_zone]
+        deadline = time.time() + 90
+        while not (fw.online and fw.fsm.state not in ("OFFLINE", "BOOTING")):
+            if time.time() > deadline:
+                esp.close()
+                raise SystemExit(f"ESP32 in QEMU did not come online; see {esp.log_path}")
+            fw.tick()
+            bus.drain(timeout=0.2)
+        log.info("ESP32 (QEMU) online: %s", fw.state_msg.get("state"))
+
+    tall = qemu_zone is not None
+    writer = VideoSink(out / "demo.mp4", fps * speed, (1280, 720 if tall else 480)) if video else None
     dt = 1.0 / fps
     commands = sorted(sc.commands)
     timeline: list[dict] = []
     receipts_seen: list[dict] = []
+    lost = {z.id: 0.0 for z in ZONES}
+    power_off = False
     t_wall = time.perf_counter()
-    for _ in range(int(round(sc.duration_s / dt))):
+    for step in range(int(round(sc.duration_s / dt))):
         world.step(dt)
+        for zid in lost:
+            lost[zid] += world.inflow_lpm(zid) * dt / 60.0
+        if esp and power_cut:
+            if not power_off and power_cut[0] <= world.t < power_cut[0] + power_cut[1] and esp.boots == 1:
+                esp.stop()
+                power_off = True
+            elif power_off and world.t >= power_cut[0] + power_cut[1]:
+                esp.start()
+                power_off = False
         while commands and commands[0][0] <= world.t:
             _, zone, cmd = commands.pop(0)
             bus.publish(topic(PREFIX, SITE, zone, "cmd"),
@@ -164,19 +279,31 @@ def run(name: str, backend: str = "oracle", out: Path | None = None, video: bool
         })
         if vis is not None:
             frame_out = np.hstack([vis, draw_panel(world, nodes, sc, pipe, receipts_seen, world.t)])
+            if tall:
+                cap = caption_for(sc, world, nodes[qemu_zone], power_off, lost[qemu_zone])
+                frame_out = np.vstack([frame_out, draw_console(
+                    esp.tail(30), cap, f"ESP32 serial: real FirmGen firmware (ESP-IDF v5.5) running in QEMU "
+                                       f"[{'POWER OFF' if power_off else f'power-on #{esp.boots}'}]")])
             if writer:
                 writer.write(frame_out)
             if show:
                 cv2.imshow("LeakLatch sim", frame_out)
                 if cv2.waitKey(1) & 0xFF in (27, ord("q")):
                     break
+        if esp:  # the firmware runs in real time: pace the world to the wall clock
+            target = t_wall + (step + 1) * dt
+            while (now := time.perf_counter()) < target:
+                bus.drain(timeout=min(0.02, target - now))
     if writer:
-        writer.release()
+        writer.close()
     if show:
         cv2.destroyAllWindows()
     if mqtt:
         time.sleep(0.5)
         bus.drain()
+    if esp:
+        esp.close()
+    if mqtt:
         bus.close()
     elapsed = time.perf_counter() - t_wall
 
@@ -244,14 +371,18 @@ def main() -> None:
     ap.add_argument("--show", action="store_true")
     ap.add_argument("--speed", type=float, default=2.0, help="video playback speed-up")
     ap.add_argument("--out", type=Path)
+    ap.add_argument("--qemu-zone", choices=[z.id for z in ZONES],
+                    help="run this zone's node as the real firmware in an emulated ESP32 (QEMU)")
+    ap.add_argument("--power-cut", help="T,D: cut the emulated ESP32's power at T s for D s")
     args = ap.parse_args()
+    cut = tuple(float(v) for v in args.power_cut.split(",")) if args.power_cut else None
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     names = sorted(SCENARIOS) if args.all else [args.scenario]
     results = []
     for name in names:
         out = (args.out / name) if (args.out and args.all) else args.out
         s = run(name, args.backend, out, video=not args.no_video, mqtt=args.mqtt, speed=args.speed,
-                show=args.show, onnx=args.onnx, engine=args.engine)
+                show=args.show, onnx=args.onnx, engine=args.engine, qemu_zone=args.qemu_zone, power_cut=cut)
         results.append(s)
         mark = "PASS" if s["passed"] else "FAIL"
         print(f"[{mark}] {name:12s} backend={s['backend']} msgs={s['messages']} wall={s['wall_time_s']}s")

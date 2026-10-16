@@ -17,11 +17,12 @@
 | Requirement | Where | Evidence |
 |---|---|---|
 | ESP-IDF v5.5 firmware | `firmgen/` | `idf.py build` passes (ESP-IDF v5.5, ESP32, 860 KB image); CI job `firmware` |
+| Runs on an ESP32 (emulated) | `firmgen/sdkconfig.qemu`, `simlab/qemu.py` | boots in Espressif QEMU; [serial log](docs/sample-runs/qemu-leak/esp32_serial.log) of a full incident and a power cut |
 | Subscribe to MQTT | `firmgen/main/ll_net.c`, `app_main.c` | subscribes `leaklatch/{site}/zone/+/event` and `…/{zone}/cmd` |
 | Read the local wetness sensor | `firmgen/main/ll_hw.c` | ADC1 oneshot, 8-sample mean, hysteresis |
 | Close the servo valve | `ll_hw.c::ll_valve_command` | LEDC 50 Hz, released after travel |
 | Verify closure with a limit switch | `ll_fsm.c::verify` | VERIFYING needs the switch; one retry, then `FAULT valve_not_closed` |
-| State machine IDLE → SUSPECT → CONFIRMING → CLOSED → VERIFYING | `firmgen/main/ll_fsm.c` | `firmgen/test/test_fsm.c`: 122 checks, 16 scenarios (plus LATCHED and FAULT outcomes) |
+| State machine IDLE → SUSPECT → CONFIRMING → CLOSED → VERIFYING | `firmgen/main/ll_fsm.c` | `firmgen/test/test_fsm.c`: 128 checks, 17 scenarios (plus LATCHED and FAULT outcomes) |
 
 ### Closed-loop bonus
 | Requirement | Evidence |
@@ -43,6 +44,9 @@ python -m simlab.run --all --backend onnxruntime                # 6 scenarios wi
 
 * **Real:** the trained model and its TensorRT engine, the PipeGen pipeline, the MQTT contract, the ESP-IDF
   firmware (compiles for ESP32), and the state machine. The simulator links the same C object the ESP32 runs.
+* **Emulated:** the ESP32 itself, for the demo. The production firmware runs in Espressif QEMU with Ethernet
+  instead of Wi-Fi and virtual pins instead of GPIO/ADC/LEDC
+  ([demo video](docs/media/leaklatch_demo.mp4)).
 * **Simulated:** the bathroom (rendered floor, physics of the pool, servo, limit switch, probe).
 * **Not yet validated:** the firmware on a physical ESP32 with servo, switch and probe; the model on footage from
   a real hostel floor. See "Before you submit".
@@ -54,7 +58,8 @@ python -m simlab.run --all --backend onnxruntime                # 6 scenarios wi
       (SAM 2 is a good fit), add them as `data/<name>/{images,masks}`, and retrain:
       `python -m pipegen.train.train_seg`.
 - [ ] Build the engine **on the Jetson**: `python -m pipegen.train.build_trt` (or `trtexec … --fp16`) and commit `models/trt_report.json`.
-- [ ] Record the 3-minute video following `docs/demo-script.md`.
+- [x] Demo video with the real firmware in an emulated ESP32: `docs/media/leaklatch_demo.mp4`.
+- [ ] Optionally re-record on real hardware following `docs/demo-script.md`.
 - [ ] Fill in team names and photos below. Push to GitHub; CI builds the firmware and runs every test.
 
 **Team:** _names / roles_

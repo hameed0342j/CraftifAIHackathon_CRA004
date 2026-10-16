@@ -24,6 +24,11 @@ def topic_matches(pattern: str, topic: str) -> bool:
     return len(p) == len(t)
 
 
+def filter_covers(a: str, b: str) -> bool:
+    """True if every topic matched by filter `b` is also matched by filter `a`."""
+    return topic_matches(a, b)  # b's wildcards are compared as literal levels, which is exactly coverage
+
+
 class InprocBus:
     """Synchronous broker in one process. Retained messages are replayed to new subscribers."""
 
@@ -80,6 +85,9 @@ class MqttBus:
         if will:
             self._client.will_set(will[0], json.dumps(will[1]), qos=1, retain=True)
         self._subs: list[tuple[str, Handler, int]] = []
+        # Filters actually subscribed at the broker. Overlapping filters are collapsed, because
+        # some brokers (amqtt) deliver one copy per matching subscription; handlers are matched locally.
+        self._broker_filters: set[str] = set()
         self._lock = threading.Lock()
         self.connected = threading.Event()
         self._client.on_connect = self._on_connect
@@ -95,8 +103,8 @@ class MqttBus:
             return
         log.info("MQTT connected")
         with self._lock:
-            for pattern, _, qos in self._subs:
-                client.subscribe(pattern, qos)
+            for pattern in self._broker_filters:
+                client.subscribe(pattern, 1)
         self.connected.set()
 
     def _on_disconnect(self, client, userdata, flags, reason_code, properties) -> None:
@@ -145,8 +153,15 @@ class MqttBus:
     def subscribe(self, pattern: str, handler: Handler, qos: int = 1) -> None:
         with self._lock:
             self._subs.append((pattern, handler, qos))
+            if any(filter_covers(f, pattern) for f in self._broker_filters):
+                return  # already delivered through a wider broker subscription
+            covered = {f for f in self._broker_filters if filter_covers(pattern, f)}
+            self._broker_filters -= covered
+            self._broker_filters.add(pattern)
         if self.connected.is_set():
-            self._client.subscribe(pattern, qos)
+            for f in covered:
+                self._client.unsubscribe(f)
+            self._client.subscribe(pattern, 1)
 
     def wait_connected(self, timeout: float = 10.0) -> bool:
         return self.connected.wait(timeout)

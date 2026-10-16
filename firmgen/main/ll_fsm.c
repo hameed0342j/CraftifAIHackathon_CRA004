@@ -172,6 +172,8 @@ void ll_fsm_restore(ll_fsm_t *f, ll_state_t persisted, uint32_t now_ms)
     begin_incident(f, "restored", "");
     enter(f, persisted == LL_ST_FAULT ? LL_ST_FAULT : LL_ST_LATCHED, "restored_after_reboot", now_ms);
     f->actions = (f->actions & ~LL_ACT_VALVE_OPEN) | LL_ACT_VALVE_CLOSE;
+    f->close_cmd_ms = now_ms;
+    f->restore_check = f->state == LL_ST_LATCHED;
 }
 
 static bool vision_fresh(const ll_fsm_t *f, uint32_t now)
@@ -288,7 +290,17 @@ static void step(ll_fsm_t *f, uint32_t now)
         case LL_ST_VERIFYING:
             verify(f, now);
             break;
-        default: /* IDLE, LATCHED, FAULT wait for inputs */
+        case LL_ST_LATCHED:
+            if (f->restore_check) {
+                if (f->limit_closed) {
+                    f->restore_check = false; /* the re-asserted close is mechanically proven */
+                } else if (elapsed(now, f->close_cmd_ms, c->close_timeout_ms)) {
+                    f->restore_check = false;
+                    enter(f, LL_ST_FAULT, "valve_not_closed", now);
+                }
+            }
+            break;
+        default: /* IDLE and FAULT wait for inputs */
             break;
         }
         if (f->state == before) {
@@ -357,6 +369,10 @@ ll_verdict_t ll_fsm_on_vision(ll_fsm_t *f, const char *event_id, const char *inc
     }
     if (opens_incident) {
         begin_incident(f, event_id, incident);
+    } else if (f->incident_id[0] == '\0' && ll_state_valve_closed(f->state)) {
+        /* restored after a reboot: learn which incident we are holding, so the warden's reset
+         * acknowledges it and its leftover pool does not re-trigger the valve */
+        copy_str(f->incident_id, sizeof f->incident_id, incident);
     }
     f->have_vision = true;
     f->last_vision_ms = now_ms;
@@ -404,7 +420,8 @@ void ll_fsm_on_wetness(ll_fsm_t *f, bool wet, uint32_t now_ms)
 
 void ll_fsm_on_limit(ll_fsm_t *f, bool closed, uint32_t now_ms)
 {
-    if (closed != f->limit_closed) {
+    bool was_closed = f->limit_closed;
+    if (closed != was_closed) {
         f->actions |= LL_ACT_PUBLISH_STATE;
     }
     f->limit_closed = closed;
@@ -412,8 +429,9 @@ void ll_fsm_on_limit(ll_fsm_t *f, bool closed, uint32_t now_ms)
         f->mech_verified = true;
         f->mech_verified_after_ms = now_ms - f->closed_at_ms;
     }
-    if (!closed && f->state == LL_ST_LATCHED) {
-        /* someone forced the valve open without a reset command */
+    if (was_closed && !closed && f->state == LL_ST_LATCHED) {
+        /* pressed -> released: someone forced the valve open without a reset command.
+         * (A "not pressed" reading right after boot is not a release.) */
         enter(f, LL_ST_FAULT, "limit_released", now_ms);
     }
     step(f, now_ms);

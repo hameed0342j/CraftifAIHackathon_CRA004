@@ -1,0 +1,8 @@
+# Overlay for running the firmware in Espressif's QEMU (see simlab/qemu.py):
+#   idf.py -B build_qemu -D SDKCONFIG=build_qemu/sdkconfig -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.qemu" build
+CONFIG_LL_TARGET_QEMU=y
+CONFIG_ETH_USE_OPENETH=y
+# QEMU user networking: the host (broker) is 10.0.2.2
+CONFIG_LL_MQTT_URI="mqtt://10.0.2.2:1883"
+CONFIG_LL_SITE_ID="pg-demo-01"
+CONFIG_LL_ZONE_ID="bathroom-1"

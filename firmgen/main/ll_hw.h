@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 esp_err_t ll_hw_init(void);
 
@@ -22,3 +23,11 @@ int ll_wet_sample(void);
 bool ll_wet_classify(int avg_raw);
 
 void ll_alarm_set(bool on);
+
+#ifdef CONFIG_LL_TARGET_QEMU
+/* Virtual pins (ll_hw_sim.c): the simulator publishes {"limit":bool,"wet_raw":int} on
+ * `pins_topic`; the firmware publishes {"servo_deg":int,"alarm":bool} on `outputs_topic`. */
+void ll_hw_sim_set_topics(const char *pins_topic, const char *outputs_topic);
+bool ll_hw_sim_ingest(const char *topic, int topic_len, const char *data, int data_len);
+void ll_hw_sim_on_connect(void);
+#endif

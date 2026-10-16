@@ -70,6 +70,11 @@ static bool topic_zone_is(const char *topic, int tlen, const char *zone)
 
 static void on_mqtt_rx(const char *topic, int tlen, const char *data, int dlen)
 {
+#ifdef CONFIG_LL_TARGET_QEMU
+    if (ll_hw_sim_ingest(topic, tlen, data, dlen)) {
+        return; /* virtual pins, not a leak event */
+    }
+#endif
     ll_input_t in = {0};
     if (tlen == (int)strlen(s_topic_cmd) && memcmp(topic, s_topic_cmd, (size_t)tlen) == 0) {
         if (!ll_msg_parse_command(data, dlen, &in.command)) {
@@ -94,6 +99,9 @@ static void on_mqtt_conn(bool connected)
     if (connected) {
         ll_net_subscribe(s_topic_events, 1); /* all zones: the zone lock is enforced in the FSM */
         ll_net_subscribe(s_topic_cmd, 1);
+#ifdef CONFIG_LL_TARGET_QEMU
+        ll_hw_sim_on_connect();
+#endif
     }
     ll_input_t in = {.type = IN_NET, .connected = connected};
     xQueueSend(s_inputs, &in, 0);
@@ -228,6 +236,15 @@ void app_main(void)
     snprintf(s_topic_receipt, sizeof s_topic_receipt, "%s%s/receipt", base_fmt, CONFIG_LL_ZONE_ID);
     snprintf(s_topic_cmd, sizeof s_topic_cmd, "%s%s/cmd", base_fmt, CONFIG_LL_ZONE_ID);
     snprintf(s_topic_events, sizeof s_topic_events, "%s+/event", base_fmt);
+#ifdef CONFIG_LL_TARGET_QEMU
+    {
+        static char pins[128], outputs[128];
+        snprintf(pins, sizeof pins, CONFIG_LL_TOPIC_PREFIX "/" CONFIG_LL_SITE_ID "/sim/%s/pins", CONFIG_LL_ZONE_ID);
+        snprintf(outputs, sizeof outputs, CONFIG_LL_TOPIC_PREFIX "/" CONFIG_LL_SITE_ID "/sim/%s/outputs",
+                 CONFIG_LL_ZONE_ID);
+        ll_hw_sim_set_topics(pins, outputs);
+    }
+#endif
 
     ll_config_t cfg;
     load_config(&cfg);

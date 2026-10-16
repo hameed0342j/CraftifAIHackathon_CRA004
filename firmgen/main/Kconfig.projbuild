@@ -1,6 +1,15 @@
 menu "LeakLatch valve node"
 
     menu "Network"
+        config LL_TARGET_QEMU
+            bool "Build for the QEMU ESP32 emulator (Ethernet + virtual I/O pins over MQTT)"
+            default n
+            select ETH_USE_OPENETH
+            help
+                Runs the unchanged state machine, MQTT stack, NVS and tasks inside Espressif's QEMU.
+                Wi-Fi is replaced by the emulated OpenCores Ethernet MAC, and the servo, limit switch
+                and wetness probe become virtual pins on leaklatch/<site>/sim/<zone>/{pins,outputs},
+                driven by the simulator (simlab). Never enable this for a real board.
         config LL_WIFI_SSID
             string "Wi-Fi SSID"
             default "leaklatch"

@@ -269,6 +269,10 @@ static void test_restore(void)
     CHECK(a & LL_ACT_VALVE_CLOSE);
     CHECK(!(a & LL_ACT_VALVE_OPEN));
 
+    run(&f, 6000, 0, 0, 0); /* limit switch never confirms the re-asserted close */
+    CHECK_STATE(f, LL_ST_FAULT);
+    CHECK_REASON(f, "valve_not_closed");
+
     ll_fsm_init(&f, NULL, ZONE, t);
     ll_fsm_restore(&f, LL_ST_FAULT, t);
     CHECK_STATE(f, LL_ST_FAULT);
@@ -277,6 +281,28 @@ static void test_restore(void)
     ll_fsm_restore(&f, LL_ST_SUSPECT, t);
     CHECK_STATE(f, LL_ST_IDLE);
     CHECK(ll_fsm_take_actions(&f) & LL_ACT_VALVE_OPEN);
+}
+
+static void test_reboot_then_reset(void)
+{
+    puts("power cut while LATCHED: restore, learn the incident, reset does not re-trigger");
+    ll_fsm_t f;
+    fresh(&f, NULL);
+    t = 50;
+    ll_fsm_init(&f, NULL, ZONE, t); /* fresh boot after the power cut, same incident still on camera */
+    ll_fsm_restore(&f, LL_ST_LATCHED, t);
+    ll_fsm_on_limit(&f, false, t); /* debouncer has not settled yet: not a release */
+    CHECK_STATE(f, LL_ST_LATCHED);
+    t += 40;
+    ll_fsm_on_limit(&f, true, t);
+    ll_fsm_on_wetness(&f, true, t);
+    run(&f, 6000, 2000, 0.20f, 0.0f);
+    CHECK_STATE(f, LL_ST_LATCHED);
+    CHECK(strcmp(ll_fsm_incident_id(&f), g_incident) == 0);
+    ll_fsm_on_command(&f, LL_CMD_RESET, t);
+    ll_fsm_on_limit(&f, false, t);
+    run(&f, 30000, 2000, 0.20f, 0.0f); /* residual pool, probe still wet */
+    CHECK_STATE(f, LL_ST_IDLE);
 }
 
 static void test_limit_released(void)
@@ -418,6 +444,7 @@ int main(void)
     test_mechanical_only();
     test_failsafe();
     test_restore();
+    test_reboot_then_reset();
     test_limit_released();
     test_operator_close();
     test_vision_only_override();

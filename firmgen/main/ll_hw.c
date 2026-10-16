@@ -1,5 +1,7 @@
 #include "ll_hw.h"
 
+#ifndef CONFIG_LL_TARGET_QEMU /* real board; QEMU builds use ll_hw_sim.c */
+
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include "esp_adc/adc_oneshot.h"
@@ -186,3 +188,5 @@ void ll_alarm_set(bool on)
     (void)on;
 #endif
 }
+
+#endif /* !CONFIG_LL_TARGET_QEMU */

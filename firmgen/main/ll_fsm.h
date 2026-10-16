@@ -151,6 +151,7 @@ typedef struct {
     float growth_after_close;
     bool vision_only_tracking;
     uint32_t vision_only_since_ms;
+    bool restore_check; /* restored after a reboot: the limit switch must re-prove closure */
 
     /* the last incident that went back to IDLE (dismissed or reset by the operator):
      * its residual pool must not re-trigger the valve unless it grows again */

@@ -1,0 +1,212 @@
+
+===== power on #1 =====
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6180
+load:0x40078000,len:15852
+load:0x40080400,len:3876
+entry 0x4008063c
+I (703) boot: ESP-IDF 3ea97e75 2nd stage bootloader
+I (705) boot: compile time Oct 16 2026 23:52:50
+I (761) boot: chip revision: v3.0
+I (764) boot.esp32: SPI Speed      : 40MHz
+I (764) boot.esp32: SPI Mode       : DIO
+I (764) boot.esp32: SPI Flash Size : 4MB
+I (785) boot: Partition Table:
+I (786) boot: ## Label            Usage          Type ST Offset   Length
+I (786) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (786) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (787) boot:  2 factory          factory app      00 00 00010000 00100000
+I (847) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=18f38h (102200) map
+I (918) esp_image: segment 1: paddr=00028f60 vaddr=3ffb0000 size=031ech ( 12780) load
+I (947) esp_image: segment 2: paddr=0002c154 vaddr=40080000 size=03ec4h ( 16068) load
+I (977) esp_image: segment 3: paddr=00030020 vaddr=400d0020 size=61c68h (400488) map
+I (1048) esp_image: segment 4: paddr=00091c90 vaddr=40083ec4 size=0c2cch ( 49868) load
+I (1078) esp_image: segment 5: paddr=0009df64 vaddr=50000000 size=00020h (    32) load
+I (1171) boot: Loaded app from partition at offset 0x10000
+I (1192) cpu_start: Multicore app
+I (2067) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (2070) cpu_start: Pro cpu start user code
+I (2070) cpu_start: cpu freq: 160000000 Hz
+I (2071) app_init: Application information:
+I (2071) app_init: Project name:     leaklatch_firmgen
+I (2071) app_init: App version:      1.0.0
+I (2071) app_init: Compile time:     Oct 16 2026 23:52:20
+I (2072) app_init: ELF file SHA256:  f9d095e7f...
+I (2072) app_init: ESP-IDF:          3ea97e75
+I (2072) efuse_init: Min chip rev:     v0.0
+I (2072) efuse_init: Max chip rev:     v3.99 
+I (2072) efuse_init: Chip rev:         v3.0
+I (2073) heap_init: Initializing. RAM available for dynamic allocation:
+I (2074) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (2074) heap_init: At 3FFB7DE0 len 00028220 (160 KiB): DRAM
+I (2075) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (2075) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (2075) heap_init: At 40090190 len 0000FE70 (63 KiB): IRAM
+I (2112) spi_flash: detected chip: gd
+I (2124) spi_flash: flash io: dio
+I (2142) main_task: Started on CPU0
+I (2149) main_task: Calling app_main()
+W (2746) ll_hw_sim: QEMU build: servo, limit switch and wetness probe are virtual pins over MQTT
+I (2748) leaklatch: zone bathroom-1 starts in IDLE (boot)
+I (2748) ll_hw_sim: valve -> OPEN (0 deg)
+I (2786) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (2788) esp_eth.netif.netif_glue: ethernet attached to netif
+E (2889) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (2889) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (2889) esp_netif_lwip: Failed to add multicast filter for IPv6
+W (2896) ll_net: QEMU build: emulated Ethernet instead of Wi-Fi
+I (2907) main_task: Returned from app_main()
+E (2910) esp-tls: [sock=54] connect() error: Host is unreachable
+E (2911) transport_base: Failed to open a new connection: 32772
+E (2911) mqtt_client: Error transport connect
+E (2913) ll_net: MQTT error
+W (2913) ll_net: MQTT disconnected
+I (3901) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (3901) ll_net: got ip 10.0.2.15
+I (7430) ll_net: MQTT connected
+I (7449) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (7452) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (7457) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (14148) leaklatch: event 6e24aa81 zone=bathroom-1 kind=0 conf=0.67 area=0.024 growth=0.557 -> accepted
+I (14224) leaklatch: #1 IDLE -> SUSPECT (vision_event) trigger=6e24aa815a0042528d1eefd0fd8fabc1
+I (16140) leaklatch: event 2857dad5 zone=bathroom-1 kind=1 conf=0.93 area=0.047 growth=0.666 -> accepted
+I (18135) leaklatch: event 866c925e zone=bathroom-1 kind=1 conf=0.94 area=0.061 growth=0.574 -> accepted
+I (20129) leaklatch: event 217cf791 zone=bathroom-1 kind=1 conf=0.94 area=0.071 growth=0.473 -> accepted
+I (22137) leaklatch: event 861fde6f zone=bathroom-1 kind=1 conf=0.94 area=0.078 growth=0.406 -> accepted
+I (22752) leaklatch: #2 SUSPECT -> CONFIRMING (local_wet) trigger=6e24aa815a0042528d1eefd0fd8fabc1
+I (24138) leaklatch: event d6fc5fc6 zone=bathroom-1 kind=1 conf=0.95 area=0.088 growth=0.352 -> accepted
+I (25688) ll_hw_sim: valve -> CLOSE (90 deg)
+I (25758) leaklatch: #3 CONFIRMING -> CLOSED (confirmed) trigger=6e24aa815a0042528d1eefd0fd8fabc1
+I (26140) leaklatch: event a75dbdda zone=bathroom-1 kind=1 conf=0.95 area=0.098 growth=0.296 -> accepted
+I (26642) leaklatch: #4 CLOSED -> VERIFYING (limit_switch) trigger=6e24aa815a0042528d1eefd0fd8fabc1
+I (28152) leaklatch: event 3baebe71 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=0.266 -> accepted
+I (30133) leaklatch: event a0a164a4 zone=bathroom-1 kind=1 conf=0.95 area=0.102 growth=0.212 -> accepted
+I (32134) leaklatch: event fb860d62 zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=0.129 -> accepted
+I (34137) leaklatch: event f5ff4b2f zone=bathroom-1 kind=1 conf=0.95 area=0.096 growth=0.031 -> accepted
+I (36145) leaklatch: event 362d45c5 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=-0.008 -> accepted
+I (38135) leaklatch: event 0bb00ac2 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=-0.006 -> accepted
+I (40144) leaklatch: event 1602c2d8 zone=bathroom-1 kind=1 conf=0.95 area=0.097 growth=-0.012 -> accepted
+I (41221) leaklatch: #5 VERIFYING -> LATCHED (verified) trigger=6e24aa815a0042528d1eefd0fd8fabc1
+I (42144) leaklatch: event d3eb1a01 zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=-0.007 -> accepted
+I (44135) leaklatch: event 86ec6185 zone=bathroom-1 kind=1 conf=0.95 area=0.104 growth=-0.002 -> accepted
+I (46133) leaklatch: event 6236053b zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=0.006 -> accepted
+I (48141) leaklatch: event 46a9b589 zone=bathroom-1 kind=1 conf=0.95 area=0.103 growth=0.025 -> accepted
+I (50137) leaklatch: event 9fdb3d8c zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=0.012 -> accepted
+I (52138) leaklatch: event f2529335 zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.013 -> accepted
+I (54149) leaklatch: event 636b1fc5 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=-0.015 -> accepted
+I (56132) leaklatch: event aef5462c zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.004 -> accepted
+I (58139) leaklatch: event e88a452e zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.005 -> accepted
+I (60137) leaklatch: event 8ac02ba2 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=-0.000 -> accepted
+I (62137) leaklatch: event 25b5ca71 zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.010 -> accepted
+I (64136) leaklatch: event a116a398 zone=bathroom-1 kind=1 conf=0.95 area=0.103 growth=0.003 -> accepted
+
+===== power cut =====
+
+===== power on #2 =====
+Adding SPI flash device
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x12 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:6180
+load:0x40078000,len:15852
+load:0x40080400,len:3876
+entry 0x4008063c
+I (702) boot: ESP-IDF 3ea97e75 2nd stage bootloader
+I (703) boot: compile time Oct 16 2026 23:52:50
+I (755) boot: chip revision: v3.0
+I (757) boot.esp32: SPI Speed      : 40MHz
+I (757) boot.esp32: SPI Mode       : DIO
+I (758) boot.esp32: SPI Flash Size : 4MB
+I (779) boot: Partition Table:
+I (779) boot: ## Label            Usage          Type ST Offset   Length
+I (780) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (780) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (780) boot:  2 factory          factory app      00 00 00010000 00100000
+I (845) esp_image: segment 0: paddr=00010020 vaddr=3f400020 size=18f38h (102200) map
+I (918) esp_image: segment 1: paddr=00028f60 vaddr=3ffb0000 size=031ech ( 12780) load
+I (944) esp_image: segment 2: paddr=0002c154 vaddr=40080000 size=03ec4h ( 16068) load
+I (973) esp_image: segment 3: paddr=00030020 vaddr=400d0020 size=61c68h (400488) map
+I (1043) esp_image: segment 4: paddr=00091c90 vaddr=40083ec4 size=0c2cch ( 49868) load
+I (1073) esp_image: segment 5: paddr=0009df64 vaddr=50000000 size=00020h (    32) load
+I (1161) boot: Loaded app from partition at offset 0x10000
+I (1179) cpu_start: Multicore app
+I (2049) cpu_start: GPIO 3 and 1 are used as console UART I/O pins
+I (2052) cpu_start: Pro cpu start user code
+I (2052) cpu_start: cpu freq: 160000000 Hz
+I (2052) app_init: Application information:
+I (2053) app_init: Project name:     leaklatch_firmgen
+I (2053) app_init: App version:      1.0.0
+I (2053) app_init: Compile time:     Oct 16 2026 23:52:20
+I (2053) app_init: ELF file SHA256:  f9d095e7f...
+I (2053) app_init: ESP-IDF:          3ea97e75
+I (2054) efuse_init: Min chip rev:     v0.0
+I (2054) efuse_init: Max chip rev:     v3.99 
+I (2054) efuse_init: Chip rev:         v3.0
+I (2055) heap_init: Initializing. RAM available for dynamic allocation:
+I (2056) heap_init: At 3FFAE6E0 len 00001920 (6 KiB): DRAM
+I (2056) heap_init: At 3FFB7DE0 len 00028220 (160 KiB): DRAM
+I (2056) heap_init: At 3FFE0440 len 00003AE0 (14 KiB): D/IRAM
+I (2057) heap_init: At 3FFE4350 len 0001BCB0 (111 KiB): D/IRAM
+I (2057) heap_init: At 40090190 len 0000FE70 (63 KiB): IRAM
+I (2095) spi_flash: detected chip: gd
+I (2104) spi_flash: flash io: dio
+I (2120) main_task: Started on CPU0
+I (2123) main_task: Calling app_main()
+W (2798) ll_hw_sim: QEMU build: servo, limit switch and wetness probe are virtual pins over MQTT
+I (2821) ll_store: restored state 5
+I (2822) leaklatch: zone bathroom-1 starts in LATCHED (restored_after_reboot)
+I (2824) ll_hw_sim: valve -> CLOSE (90 deg)
+I (2863) esp_eth.netif.netif_glue: 52:54:00:12:34:56
+I (2863) esp_eth.netif.netif_glue: ethernet attached to netif
+W (2964) ll_net: QEMU build: emulated Ethernet instead of Wi-Fi
+E (2964) esp_eth: esp_eth_ioctl(533): add mac address to filter not supported
+E (2967) esp_eth.netif.netif_glue: eth_set_mac_filter(56): failed to add mac filter
+E (2967) esp_netif_lwip: Failed to add multicast filter for IPv6
+E (2988) esp-tls: [sock=54] connect() error: Host is unreachable
+I (2989) main_task: Returned from app_main()
+E (2989) transport_base: Failed to open a new connection: 32772
+E (2989) mqtt_client: Error transport connect
+E (2989) ll_net: MQTT error
+W (2991) ll_net: MQTT disconnected
+I (3977) esp_netif_handlers: eth ip: 10.0.2.15, mask: 255.255.255.0, gw: 10.0.2.2
+I (3977) ll_net: got ip 10.0.2.15
+I (6009) ll_net: MQTT connected
+I (6015) leaklatch: #1 IDLE -> LATCHED (restored_after_reboot) trigger=restored
+I (6026) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (6026) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (6029) leaklatch: event  zone= kind=0 conf=0.00 area=0.000 growth=0.000 -> malformed
+I (6879) leaklatch: event 902df3db zone=bathroom-1 kind=1 conf=0.95 area=0.098 growth=-0.003 -> accepted
+I (8880) leaklatch: event 562f4fb6 zone=bathroom-1 kind=1 conf=0.95 area=0.098 growth=-0.016 -> accepted
+I (10889) leaklatch: event 31c825bd zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=-0.021 -> accepted
+I (12879) leaklatch: event 22844378 zone=bathroom-1 kind=1 conf=0.95 area=0.098 growth=-0.006 -> accepted
+I (14884) leaklatch: event aad6bc41 zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=0.011 -> accepted
+I (16880) leaklatch: event 80cbccaa zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=0.007 -> accepted
+I (18886) leaklatch: event 6fbe27e7 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=0.002 -> accepted
+I (20878) leaklatch: event fafeb182 zone=bathroom-1 kind=1 conf=0.95 area=0.101 growth=0.001 -> accepted
+I (22876) leaklatch: event 171183d8 zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.012 -> accepted
+W (23245) leaklatch: operator command reset
+I (23246) ll_hw_sim: valve -> OPEN (0 deg)
+I (23328) leaklatch: #2 LATCHED -> IDLE (operator_reset) trigger=restored
+I (24882) leaklatch: event 89dbbe15 zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=-0.002 -> accepted
+I (26881) leaklatch: event 79a92b4e zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.007 -> accepted
+I (28885) leaklatch: event 3e5f0505 zone=bathroom-1 kind=1 conf=0.95 area=0.097 growth=-0.006 -> accepted
+I (30887) leaklatch: event 4470142d zone=bathroom-1 kind=1 conf=0.95 area=0.097 growth=0.004 -> accepted
+I (32890) leaklatch: event 6278c1a6 zone=bathroom-1 kind=1 conf=0.95 area=0.100 growth=-0.005 -> accepted
+I (34888) leaklatch: event 7da5408e zone=bathroom-1 kind=1 conf=0.95 area=0.095 growth=-0.008 -> accepted
+I (36888) leaklatch: event b7d1a54b zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=-0.010 -> accepted
+I (38888) leaklatch: event 8dba3fa6 zone=bathroom-1 kind=1 conf=0.95 area=0.096 growth=-0.012 -> accepted
+I (40880) leaklatch: event 939847c8 zone=bathroom-1 kind=1 conf=0.95 area=0.098 growth=-0.002 -> accepted
+I (42891) leaklatch: event 9850cb37 zone=bathroom-1 kind=1 conf=0.95 area=0.099 growth=0.006 -> accepted
+I (44877) leaklatch: event cafb2537 zone=bathroom-1 kind=1 conf=0.95 area=0.096 growth=-0.003 -> accepted
+I (46889) leaklatch: event f7fe7f15 zone=bathroom-1 kind=1 conf=0.95 area=0.097 growth=-0.002 -> accepted
+
+===== power cut =====
